@@ -299,7 +299,7 @@ function M.handle_Tab(reverse)
   -- Restore cursor to correct column inside insert mode
   local col = vim.api.nvim_win_get_cursor(0)[2]
   local shift = #new_indent - #list_item.indent
-  vim.api.nvim_win_set_cursor(0, { line_nr, math.max(col + shift, #new_indent) })
+  vim.api.nvim_win_set_cursor(0, { line_nr, math.max(col + shift, #new_indent + shift) })
   return ""
 end
 
