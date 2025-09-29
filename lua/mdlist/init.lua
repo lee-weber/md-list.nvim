@@ -230,19 +230,16 @@ end
 function M.handle_O()
   local line_nr = vim.api.nvim_win_get_cursor(0)[1]
   local line = vim.api.nvim_get_current_line()
-  
   local list_item = parse_list_item(line)
   if not list_item then
     -- Not a list item, use default 'O' behavior
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), 'n', true)
   end
-  
   -- Special handling for colon-terminated lines
   if list_item.type == "colon" or list_item.type == "unordered_colon" or list_item.type == "ordered_colon" then
     -- For colon lines, just use the default 'O' behavior
     return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("O", true, false, true), 'n', true)
   end
-  
   -- Create the new list item
   local new_item
   if list_item.type == "unordered" then
@@ -250,26 +247,37 @@ function M.handle_O()
   else
     -- For ordered lists, use the same number and adjust the current line's number
     new_item = list_item.indent .. list_item.number .. list_item.separator .. " "
-    
     -- Update the current line's number if it's an ordered list
     if list_item.type == "ordered" then
       local updated_line = list_item.indent .. (list_item.number + 1) .. list_item.separator .. " " .. list_item.content
       vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr, false, {updated_line})
     end
   end
-  
   -- Insert a new line above the current line
   vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr - 1, false, {new_item})
-  
   -- Position cursor at the end of the new list item
   vim.api.nvim_win_set_cursor(0, {line_nr, #new_item})
-  
   -- Enter insert mode
   vim.cmd("startinsert")
-  
   return ""
 end
 
+function M.handle_Tab()
+    local line_nr = vim.api.nvim_win_get_cursor(0)[1]
+    local line = vim.api.nvim_get_current_line()
+    local list_item = parse_list_item(line)
+    if not list_item then
+      -- Not a list item, use default '<Tab>' behavior
+      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), 'i', true)
+    end
+    local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
+    local new_indent = list_item.indent .. indent_unit
+    local new_line = new_indent .. line
+    vim.api.nvim_buf_set_lines(0, line_nr, line_nr, false, {new_line})
+    -- Enter insert mode
+    vim.cmd("startinsert")
+    return ""
+end
 -- Setup function to initialize the plugin
 function M.setup(opts)
   -- Merge user config with defaults
@@ -282,7 +290,7 @@ function M.setup(opts)
     pattern = M.config.filetypes,
     callback = function()
       -- Map <CR> to our handler in insert mode
-      vim.api.nvim_buf_set_keymap(0, "i", "<CR>", 
+      vim.api.nvim_buf_set_keymap(0, "i", "<CR>",
         [[<Cmd>lua require('mdlist').handle_cr()<CR>]],
         { noremap = true, silent = true })
       
@@ -295,6 +303,11 @@ function M.setup(opts)
       vim.api.nvim_buf_set_keymap(0, "n", "O",
         [[<Cmd>lua require('mdlist').handle_O()<CR>]],
         { noremap = true, silent = true })
+
+      -- Map 'tab' to our handler in insert mode
+      vim.api.nvim_buf_set_keymap(0, "i", "<Tab>",
+        [[Cmd>lua require('mdlist').handle_Tab()<CR>]],
+        { noremap = true, silent = true})
     end
   })
 end
