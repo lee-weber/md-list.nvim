@@ -124,7 +124,9 @@ function M.handle_cr()
     local new_indent = list_item.indent .. indent_unit
     
     -- Get the marker for colon-based lists
-    local marker = get_colon_marker()
+    local level = math.floor(#new_indent / #indent_unit)
+    local marker = get_marker_for_indent(level)
+
     local new_item = new_indent .. marker .. " "
     
     -- Insert the new list item on the next line
