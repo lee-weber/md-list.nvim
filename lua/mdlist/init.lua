@@ -14,6 +14,11 @@ M.config = {
   filetypes = { "markdown", "text" }
 }
 
+local function get_marker_for_indent(level)
+  local markers = { "-", "*", "+" }
+  return markers[(level % #markers) + 1]
+end
+
 -- Check if the current line is a list item and return its components
 local function parse_list_item(line)
   -- Check for unordered list items (*, -, +, >) that end with a colon
@@ -269,8 +274,7 @@ function M.handle_Tab(reverse)
   local list_item = parse_list_item(line)
   if not list_item then
     -- Not a list item, use default behavior
-    local key = reverse and "<S-Tab>" or "<Tab>"
-    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'i', true)
+    return "<Tab>"
   end
   local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
   local new_indent
@@ -285,8 +289,12 @@ function M.handle_Tab(reverse)
       -- Indent (Tab)
       new_indent = list_item.indent .. indent_unit
   end
+  -- Decide marker adaptively based on indent depth
+  local level = math.floor(#new_indent / #indent_unit)
+  local new_marker = get_marker_for_indent(level)
   -- Rebuild line with new indentation
-  local new_line = new_indent .. line:sub(#list_item.indent + 1)
+  local after_prefix = line:sub(#list_item.indent + #list_item.prefix + 1)
+  local new_line = new_indent .. new_marker .. " " .. after_prefix
   vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr, false, { new_line })
   -- Restore cursor to correct column inside insert mode
   local col = vim.api.nvim_win_get_cursor(0)[2]
