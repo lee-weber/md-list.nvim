@@ -15,7 +15,7 @@ M.config = {
 }
 
 local function get_marker_for_indent(level)
-  return M.config.list_markers[math.min(level, #M.config.list_markers)]
+  return M.config.list_markers[math.min(level, #M.config.list_markers + 1) + 1]
 end
 
 -- Check if the current line is a list item and return its components
