@@ -5,7 +5,7 @@ M.config = {
   -- List markers to recognize and continue
   list_markers = {
     -- Unordered list markers
-    "*", "-", "+", ">",
+    "-", "*", "+", ">",
     -- Ordered list markers will be detected by pattern
   },
   -- Marker to use for new lists after a colon (defaults to first marker in list_markers)
@@ -15,8 +15,7 @@ M.config = {
 }
 
 local function get_marker_for_indent(level)
-  local markers = { "-", "*", "+" }
-  return markers[(level % #markers) + 1]
+  return M.config.list_markers[math.min(level, #M.config.list_markers) + 1]
 end
 
 -- Check if the current line is a list item and return its components
