@@ -262,22 +262,39 @@ function M.handle_O()
   return ""
 end
 
-function M.handle_Tab()
-    local line_nr = vim.api.nvim_win_get_cursor(0)[1]
-    local line = vim.api.nvim_get_current_line()
-    local list_item = parse_list_item(line)
-    if not list_item then
-      -- Not a list item, use default '<Tab>' behavior
-      return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Tab>", true, false, true), 'i', true)
+-- Handle <Tab> and <S-Tab> keypresses for list indentation 
+function M.handle_Tab(reverse)
+  local line_nr = vim.api.nvim_win_get_cursor(0)[1]
+  local line = vim.api.nvim_get_current_line()
+  local list_item = parse_list_item(line)
+  if not list_item then
+    -- Not a list item, use default behavior
+    local key = reverse and "<S-Tab>" or "<Tab>"
+    return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, false, true), 'i', true)
+  end
+  local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
+  local new_indent
+  if reverse then
+    -- Unindent (Shift+Tab): only if enough indent exists
+    if #list_item.indent >= #indent_unit then
+      new_indent = list_item.indent:sub(1, #list_item.indent - #indent_unit)
+    else
+      new_indent = ""
     end
-    local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
-    local new_indent = list_item.indent .. indent_unit
-    local new_line = new_indent .. line
-    vim.api.nvim_buf_set_lines(0, line_nr, line_nr, false, {new_line})
-    -- Enter insert mode
-    vim.cmd("startinsert")
-    return ""
+    else
+      -- Indent (Tab)
+      new_indent = list_item.indent .. indent_unit
+  end
+  -- Rebuild line with new indentation
+  local new_line = new_indent .. line:sub(#list_item.indent + 1)
+  vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr, false, { new_line })
+  -- Restore cursor to correct column inside insert mode
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  local shift = #new_indent - #list_item.indent
+  vim.api.nvim_win_set_cursor(0, { line_nr, math.max(col + shift, #new_indent) })
+  return ""
 end
+
 -- Setup function to initialize the plugin
 function M.setup(opts)
   -- Merge user config with defaults
@@ -304,10 +321,13 @@ function M.setup(opts)
         [[<Cmd>lua require('mdlist').handle_O()<CR>]],
         { noremap = true, silent = true })
 
-      -- Map 'tab' to our handler in insert mode
       vim.api.nvim_buf_set_keymap(0, "i", "<Tab>",
-        [[Cmd>lua require('mdlist').handle_Tab()<CR>]],
-        { noremap = true, silent = true})
+        [[<Cmd>lua require('mdlist').handle_Tab(false)<CR>]],
+        { noremap = true, silent = true }) 
+
+      vim.api.nvim_buf_set_keymap(0, "i", "<S-Tab>",
+        [[<Cmd>lua require('mdlist').handle_Tab(true)<CR>]],
+        { noremap = true, silent = true })      
     end
   })
 end
