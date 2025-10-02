@@ -146,8 +146,10 @@ function M.handle_cr()
       
       -- Create a new list item with reduced indentation
       local new_item
+      local level = math.floor(#reduced_indent / #indent_unit)
+      local marker = get_marker_for_indent(level)
       if list_item.type == "unordered" then
-        new_item = reduced_indent .. list_item.marker .. " "
+        new_item = reduced_indent .. marker .. " "
       else
         -- For ordered lists, find the next number at the reduced indentation level
         local next_num = find_next_ordered_number(reduced_indent, line_nr)
@@ -167,8 +169,11 @@ function M.handle_cr()
   
   -- Create the new list item with the same indentation
   local new_item
+  local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
+  local level = math.floor(list_item.indent / #indent_unit)
+  local marker = get_marker_for_indent(level)
   if list_item.type == "unordered" then
-    new_item = list_item.indent .. list_item.marker .. " "
+    new_item = list_item.indent .. marker .. " "
   else
     new_item = list_item.indent .. (list_item.number + 1) .. list_item.separator .. " "
   end
@@ -298,9 +303,7 @@ function M.handle_Tab(reverse)
   local new_line = new_indent .. new_marker .. " " .. after_prefix
   vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr, false, { new_line })
   -- Restore cursor to correct column inside insert mode
-  local col = vim.api.nvim_win_get_cursor(0)[2]
-  local shift = #new_indent - #list_item.indent
-  vim.api.nvim_win_set_cursor(0, { line_nr, col + shift})
+  vim.api.nvim_win_set_cursor(0, {line_nr + 1, #new_line})
   return ""
 end
 
