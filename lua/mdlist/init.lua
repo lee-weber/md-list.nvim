@@ -170,7 +170,7 @@ function M.handle_cr()
   -- Create the new list item with the same indentation
   local new_item
   local indent_unit = vim.o.expandtab and string.rep(" ", vim.o.shiftwidth) or "\t"
-  local level = math.floor(list_item.indent / #indent_unit)
+  local level = math.floor(#list_item.indent / #indent_unit)
   local marker = get_marker_for_indent(level)
   if list_item.type == "unordered" then
     new_item = list_item.indent .. marker .. " "
