@@ -303,7 +303,7 @@ function M.handle_Tab(reverse)
   local new_line = new_indent .. new_marker .. " " .. after_prefix
   vim.api.nvim_buf_set_lines(0, line_nr - 1, line_nr, false, { new_line })
   -- Restore cursor to correct column inside insert mode
-  vim.api.nvim_win_set_cursor(0, {line_nr + 1, #new_line})
+  vim.api.nvim_win_set_cursor(0, {line_nr, #new_line})
   return ""
 end
 
